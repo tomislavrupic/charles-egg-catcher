@@ -4,6 +4,7 @@ import {gameRandom} from './charles-random.mjs';
 import {createGameAudio} from './charles-audio.mjs';
 import {endingVisual} from './charles-ending.mjs';
 import {gameViewport} from './charles-viewport.mjs';
+import {createScoreClient,scoreRunId} from './charles-score-client.mjs';
 import {WALK} from './charles-walk.mjs';
 if(new URLSearchParams(location.search).has('ipad'))document.documentElement.classList.add('ipad-game');
 const $=s=>document.querySelector(s),canvas=$('#game'),ctx=canvas.getContext('2d',{alpha:false});
@@ -26,6 +27,28 @@ for(const audio of gameAudio.elements){audio.hidden=true;document.body.append(au
 let state=createRound(),ready=false,running=false,started=false,muted=false,atlas,gooberAtlas,spiderAtlas,winAtlas,walkAtlas,endAtlas,ending=null,celebration=null,sprites={},last=0,animTime=0,raf,eventSeen=0,messageUntil=0;
 let walking=false,walkDirection=-1,walkTime=0,walkFrame=0;
 function resetWalk(){walking=false;walkDirection=-1;walkTime=0;walkFrame=0;}
+const scoreClient=createScoreClient();
+let scores=[],scoreSaved=false,scoreSaving=false,runId=scoreRunId(),scoreLoad=0;
+function paintScores(){
+ const list=$('#score-list');list.replaceChildren();
+ scores.forEach(entry=>{const row=document.createElement('li'),name=document.createElement('span'),value=document.createElement('b');name.textContent=entry.name;value.textContent=String(entry.score);row.append(name,value);list.append(row);});
+ $('#record').textContent=scores.length?`HIGH SCORE · ${scores[0].name} · ${scores[0].score} ${scores[0].score===1?'egg':'eggs'}`:'Be the first on the high-score table!';
+}
+async function loadScores(){
+ const request=++scoreLoad;
+ try{const entries=await scoreClient.list();if(request!==scoreLoad)return;scores=entries;paintScores();$('#scores-status').textContent=entries.length?'':'No scores yet. Make the first one!';}
+ catch(error){if(request!==scoreLoad)return;$('#record').textContent='Online high scores unavailable';$('#scores-status').textContent=error.message;}
+}
+function resetScoreEntry(){scoreSaved=false;runId=scoreRunId();$('#save-score').disabled=false;$('#save-score').textContent='Save score';}
+$('#score-form').onsubmit=async e=>{
+ e.preventDefault();if(!state.over||scoreSaved||scoreSaving)return;
+ const submissionId=runId,score=state.eggs;scoreSaving=true;$('#save-score').disabled=true;$('#scores-status').textContent='Saving…';
+ // Supersede an older list request so it cannot overwrite a successful submission.
+ ++scoreLoad;
+ try{const entries=await scoreClient.save($('#player-name').value,score,submissionId);scores=entries;paintScores();if(runId===submissionId){scoreSaved=true;$('#save-score').textContent='Saved!';$('#scores-status').textContent='Score saved!';}}
+ catch(error){if(runId===submissionId){$('#save-score').disabled=false;$('#scores-status').textContent=error.message;}}
+ finally{scoreSaving=false;}
+};
 const keys=new Set();let pointerTarget=null;
 if(ipad)document.addEventListener('contextmenu',e=>e.preventDefault());
 function image(url){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('Could not load '+url));im.src=url;});}
@@ -50,6 +73,9 @@ function sound(){
 }
 function showOverlay(mode){
  $('#overlay').hidden=false;
+ $('#high-scores').hidden=mode!=='over';
+ $('#score-form').hidden=mode!=='over'||state.eggs<1;
+ if(mode==='over')loadScores();
  const lost=mode==='over',paused=mode==='pause';
  $('#eyebrow').textContent=lost?'ROUND COMPLETE':paused?'TAKE A BREATHER':'HELLO, CHARLES!';
  $('#headline').innerHTML=lost?`${state.eggs} ${state.eggs===1?'egg':'eggs'} saved!`:paused?'Basket break.':'A basket.<br>A big adventure.';
@@ -57,9 +83,9 @@ function showOverlay(mode){
  $('#start').textContent=paused?'Keep catching →':lost?'Play again →':'Let’s catch eggs →';
  $('#load-status').textContent=lost?'EVERY ROUND IS A NEW ADVENTURE':'Arrows or drag to move · Space to pause';
 }
-function start(){if(!ready||ending)return;if(state.over){state=createRound();ending=null;celebration=null;resetWalk();animTime=0;eventSeen=0;gameAudio.reset();pointerTarget=null;}started=true;running=true;$('#overlay').hidden=true;$('#pause').disabled=false;$('#pause').textContent='Pause';$('#restart').disabled=false;last=0;sound();canvas.focus({preventScroll:true});}
+function start(){if(!ready||ending)return;if(state.over){state=createRound();resetScoreEntry();ending=null;celebration=null;resetWalk();animTime=0;eventSeen=0;gameAudio.reset();pointerTarget=null;}started=true;running=true;$('#overlay').hidden=true;$('#pause').disabled=false;$('#pause').textContent='Pause';$('#restart').disabled=false;last=0;sound();canvas.focus({preventScroll:true});}
 function pause(){if(!started||state.over)return;running=!running;keys.clear();$('#pause').textContent=running?'Pause':'Resume';if(running){$('#overlay').hidden=true;last=0;}else showOverlay('pause');sound();}
-function restart(){state=createRound();ending=null;celebration=null;resetWalk();animTime=0;eventSeen=0;gameAudio.reset();pointerTarget=null;keys.clear();$('#message').textContent='';start();}
+function restart(){state=createRound();resetScoreEntry();ending=null;celebration=null;resetWalk();animTime=0;eventSeen=0;gameAudio.reset();pointerTarget=null;keys.clear();$('#message').textContent='';start();}
 $('#start').onclick=start;$('#pause').onclick=pause;$('#restart').onclick=restart;
 $('#sound').onclick=()=>{muted=!muted;$('#sound').textContent=muted?'Sound off':'Sound on';$('#sound').setAttribute('aria-pressed',String(muted));sound();};
 function pointer(e){const r=canvas.getBoundingClientRect();pointerTarget=(e.clientX-r.left)/r.width*viewport.width-viewport.x;}
@@ -70,6 +96,7 @@ for(const [id,key] of [['left','ArrowLeft'],['right','ArrowRight']]){
  b.onpointerup=b.onpointercancel=b.onlostpointercapture=()=>keys.delete(key);
 }
 document.addEventListener('keydown',e=>{
+ if(e.target.matches('input,textarea'))return;
  if(['ArrowLeft','ArrowRight','KeyA','KeyD'].includes(e.code)){e.preventDefault();pointerTarget=null;keys.add(e.code);}
  if(e.code==='Space'&&!ending&&!e.repeat&&!e.target.matches('button,a')){e.preventDefault();if(!started||state.over)start();else pause();}
  if(e.key==='Escape'&&running)pause();
@@ -190,6 +217,6 @@ try{
  atlas=loaded[0];const eggs=splitSheet(loaded[1],2),rocks=splitSheet(loaded[2],3);
  const enemies=splitSheet(loaded[3],2,[0,.42,1]);
  sprites={cracked:splitSheet(loaded[8],1)[0],fresh:eggs[0],spoiled:eggs[1],rock:rocks[0],rock2:rocks[1],bonus:rocks[2],goober:enemies[0],crusher:enemies[1]};
- ready=true;$('#start').disabled=false;showOverlay('ready');
+ ready=true;$('#start').disabled=false;showOverlay('ready');loadScores();
 }catch(error){$('#headline').textContent='Charles needs his drawings.';$('#description').textContent=error.message;$('#load-status').textContent='Open through the PXL local server, then reload.';}
 render();raf=requestAnimationFrame(tick);

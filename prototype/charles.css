@@ -25,3 +25,10 @@ html.ipad-game, .ipad-game body{width:100%;height:100%;overflow:hidden;backgroun
 .ipad-game body:has(#overlay:not([hidden])) .move-buttons button{visibility:hidden}
 
 .ipad-game body{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+
+#record{font-size:12px;font-weight:bold;color:#386238;margin:10px 0}
+#high-scores[hidden],#score-form[hidden]{display:none}
+#high-scores{margin:12px auto 18px;max-width:340px;text-align:left}#high-scores h3{text-align:center;font-size:13px;letter-spacing:2px;margin:8px 0}
+#score-list{margin:8px 0;padding-left:28px;max-height:140px;overflow:auto;font-size:13px;line-height:1.7}#score-list li{padding-left:6px}#score-list li span{display:inline-block;max-width:75%;overflow:hidden;vertical-align:bottom;text-overflow:ellipsis}#score-list li b{float:right;margin-left:12px}
+#score-form label{display:block;font-size:12px;margin-bottom:6px}.score-entry{display:flex;gap:8px}.score-entry input{min-width:0;width:100%;border:2px solid #303222;background:#fffdf3;padding:10px;font:inherit;font-size:16px;color:#282a23;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}.score-entry button{font-size:12px;white-space:nowrap;padding:8px 10px}
+#scores-status{font-size:12px;line-height:1.4;margin:7px 0}.card{max-height:94%;overflow:auto}.ipad-game .card{max-height:calc(100dvh - 110px);overflow:auto}.ipad-game .card:has(#high-scores:not([hidden])){padding:12px 24px}.ipad-game .card:has(#high-scores:not([hidden])) h2{font-size:26px;margin:7px 0}.ipad-game .card #record{font-size:12px}.ipad-game .card #scores-status{font-size:12px}
