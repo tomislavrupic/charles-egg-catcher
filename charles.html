@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <title>Charles · Egg catcher · PXL/01</title>
+ <link rel="icon" type="image/png" href="assets/charles/app-icon-v3.png">
+ <link rel="apple-touch-icon" href="assets/charles/app-icon-v3.png">
+ <link rel="stylesheet" href="prototype/charles.css">
+</head>
+<body>
+ <main>
+  <header><a href="./" aria-label="Restart Charles">← CHARLES</a><span>OUR FIRST GAME</span><button id="sound" aria-pressed="false">Sound on</button></header>
+  <div class="heading"><div><p>MADE FROM A KID’S DRAWINGS</p><h1>CHARLES<span>EGG CATCHER</span></h1></div><div class="round-info"><b id="level">LEVEL 1</b><span id="time">Fresh eggs · 0 / 10</span></div></div>
+  <section class="stage" aria-label="Charles egg-catching game">
+   <canvas id="game" width="960" height="540" tabindex="0" aria-label="Move Charles left and right to catch fresh eggs and avoid spoiled eggs and rocks"></canvas>
+   <div class="hud"><span id="lives" aria-label="3 chances remaining">♥ ♥ ♥</span><span id="message" role="status" aria-live="polite"></span></div>
+   <div id="slow" role="status" hidden></div>
+   <div id="overlay"><div class="card"><p id="eyebrow">HELLO, CHARLES!</p><h2 id="headline">A basket.<br>A big adventure.</h2><p id="description">Catch 10 fresh → 20 cracked → 30 of all eggs.<br>Charles can catch with his whole body!</p><button id="start" disabled>Loading Charles…</button><p class="small" id="load-status">Preparing your drawings</p></div></div>
+  </section>
+  <footer><div class="move-buttons"><button id="left" aria-label="Move left">◀</button><button id="right" aria-label="Move right">▶</button></div><p>← → TO MOVE · OR DRAG CHARLES<br><span>SPACE TO PAUSE · THREE MISTAKES END A ROUND</span></p><button id="pause" disabled>Pause</button><button id="restart" disabled>Restart</button></footer>
+  <div class="legend"><span>💙 BLUE EGG: +1 LIFE</span><span><i class="egg"></i> CATCH FRESH EGGS</span><span><i class="egg spoiled"></i> <b id="spoiled-rule">AVOID SPOILED EGGS</b></span><span><i class="rock"></i> ROCKS BREAK ONE EGG</span></div>
+ </main>
+ <script type="module" src="prototype/charles.mjs"></script>
+</body>
+</html>
